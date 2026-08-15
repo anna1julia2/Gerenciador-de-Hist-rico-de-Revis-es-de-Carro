@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema completo de gestão de veículos e registro de manutenções automotivas. Controle de custos com manutenção preventiva, preditiva e corretiva, alertas de revisão e relatórios.">
+    <title>AutoCare - Gestão de Veículos e Registro de Manutenções</title>
+
+    <!-- Fonte Google Inter & Ícones FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS Customizado (Alinhado ao DESIGN.md / Stitch) -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Chart.js CDN para gráficos interativos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- Header / Barra Superior da Aplicação -->
+        <header class="header-bar">
+            <div class="brand-section">
+                <div class="brand-icon">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <div class="brand-title">
+                    <h1>AutoCare Manager</h1>
+                    <p>Gestão Veicular & Controle de Manutenções</p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="active-vehicle-selector">
+                    <label for="selectVeiculoAtivo"><i class="fas fa-filter"></i> Veículo Ativo:</label>
+                    <select id="selectVeiculoAtivo" class="select-custom">
+                        <!-- Preenchido dinamicamente pelo JS -->
+                    </select>
+                </div>
+
+                <button id="btnNovoVeiculo" class="btn btn-secondary" onclick="App.openNovoVeiculoModal()">
+                    <i class="fas fa-plus-circle"></i> Novo Veículo
+                </button>
+
+                <button id="btnNovaManutencao" class="btn btn-primary" onclick="App.openNovaManutencaoModal()">
+                    <i class="fas fa-wrench"></i> Registrar Manutenção
+                </button>
+            </div>
+        </header>
+
+        <!-- Banner Dinâmico do Veículo Ativo -->
+        <section id="vehicleBanner" class="vehicle-banner">
+            <!-- Preenchido dinamicamente pelo JS -->
+        </section>
+
+        <!-- Alerta Visual Inteligente de Próxima Revisão -->
+        <section id="revisionAlertContainer" class="revision-alert-card status-success">
+            <!-- Preenchido dinamicamente pelo JS -->
+        </section>
+
+        <!-- Painel de Métricas Financeiras & Categorias -->
+        <section class="dashboard-grid">
+            
+            <!-- Card Preventiva -->
+            <article class="metric-card metric-preventiva">
+                <div class="metric-card-header">
+                    <span class="metric-title">Manutenção Preventiva</span>
+                    <div class="metric-icon-box"><i class="fas fa-shield-alt"></i></div>
+                </div>
+                <div id="valPreventiva" class="metric-value">R$ 0,00</div>
+                <div id="subPreventiva" class="metric-subtitle">0 registros</div>
+            </article>
+
+            <!-- Card Preditiva -->
+            <article class="metric-card metric-preditiva">
+                <div class="metric-card-header">
+                    <span class="metric-title">Manutenção Preditiva</span>
+                    <div class="metric-icon-box"><i class="fas fa-search-dollar"></i></div>
+                </div>
+                <div id="valPreditiva" class="metric-value">R$ 0,00</div>
+                <div id="subPreditiva" class="metric-subtitle">0 registros</div>
+            </article>
+
+            <!-- Card Corretiva -->
+            <article class="metric-card metric-corretiva">
+                <div class="metric-card-header">
+                    <span class="metric-title">Manutenção Corretiva</span>
+                    <div class="metric-icon-box"><i class="fas fa-exclamation-triangle"></i></div>
+                </div>
+                <div id="valCorretiva" class="metric-value">R$ 0,00</div>
+                <div id="subCorretiva" class="metric-subtitle">0 registros</div>
+            </article>
+
+            <!-- Card Custo Total -->
+            <article class="metric-card metric-total">
+                <div class="metric-card-header">
+                    <span class="metric-title">Custo Acumulado Total</span>
+                    <div class="metric-icon-box"><i class="fas fa-wallet"></i></div>
+                </div>
+                <div id="valTotal" class="metric-value">R$ 0,00</div>
+                <div id="subTotal" class="metric-subtitle">0 manutenções no total</div>
+            </article>
+
+            <!-- Card Destaque: Maior Gasto -->
+            <article id="cardMaiorGasto" class="highlight-card">
+                <!-- Preenchido dinamicamente pelo JS -->
+            </article>
+
+        </section>
+
+        <!-- Seção Interativa com Gráfico de Custos e Tabela de Histórico -->
+        <div class="grid-chart-table">
+            
+            <!-- Gráfico de Rosca (Categorias) -->
+            <div class="chart-container-card">
+                <h3 class="chart-card-title">
+                    <i class="fas fa-chart-pie"></i> Divisão dos Gastos por Categoria
+                </h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartCategorias"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabela Principal de Registros -->
+            <div class="table-container-card">
+                <div class="table-header-row">
+                    <div class="table-title">
+                        <h3><i class="fas fa-history"></i> Histórico de Manutenções</h3>
+                    </div>
+                    
+                    <div class="table-filters">
+                        <input type="text" id="searchManutencao" class="input-search" placeholder="🔍 Buscar por serviço ou observação...">
+                        
+                        <select id="filterCategoria" class="select-custom">
+                            <option value="">Todas as Categorias</option>
+                            <option value="Preventiva">Preventiva</option>
+                            <option value="Preditiva">Preditiva</option>
+                            <option value="Corretiva">Corretiva</option>
+                        </select>
+
+                        <button id="btnExportCSV" class="btn btn-sm btn-secondary" title="Exportar dados para planilha CSV">
+                            <i class="fas fa-file-csv" style="color: #006e2f;"></i> Exportar CSV
+                        </button>
+
+                        <button id="btnExportPDF" class="btn btn-sm btn-secondary" title="Gerar relatório completo para impressão em PDF">
+                            <i class="fas fa-file-pdf" style="color: #ba1a1a;"></i> Relatório PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="custom-table-wrapper">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Veículo</th>
+                                <th>Serviço / Descrição</th>
+                                <th>Categoria</th>
+                                <th>Data</th>
+                                <th>Quilometragem</th>
+                                <th>Valor (R$)</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyManutencoes">
+                            <!-- Preenchido dinamicamente via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rodapé da Aplicação -->
+        <footer class="app-footer">
+            <div>
+                AutoCare &copy; 2026 - Gestor de Revisão Automotiva.
+            </div>
+            <div>
+                <button id="btnResetMock" class="btn btn-sm btn-outline" style="font-size: 11px;">
+                    <i class="fas fa-undo"></i> Restaurar Dados Demonstrativos
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- MODAL 1: CADASTRO / EDIÇÃO DE VEÍCULOS -->
+    <div id="modalVeiculo" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalVeiculoTitle">Cadastrar Novo Veículo</h3>
+                <button class="modal-close-btn" onclick="App.toggleModal('modalVeiculo', false)">&times;</button>
+            </div>
+            <form id="formVeiculo">
+                <div class="modal-body">
+                    <input type="hidden" id="veiculoId">
+
+                    <div class="form-group">
+                        <label for="veiculoModelo">Modelo / Marca do Veículo *</label>
+                        <input type="text" id="veiculoModelo" class="form-control" placeholder="Ex: Toyota Corolla 2.0 Flex" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="veiculoPlaca">Placa *</label>
+                            <input type="text" id="veiculoPlaca" class="form-control" placeholder="Ex: ABC-1D23" required uppercase>
+                        </div>
+                        <div class="form-group">
+                            <label for="veiculoAno">Ano Fabricação</label>
+                            <input type="number" id="veiculoAno" class="form-control" placeholder="Ex: 2022" min="1950" max="2030">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="veiculoKm">Quilometragem Atual (KM) *</label>
+                        <input type="number" id="veiculoKm" class="form-control" placeholder="Ex: 58500" min="0" step="1" required>
+                    </div>
+
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; color: var(--text-secondary);">Veículos Cadastrados no Sistema</h4>
+                        <div id="listaVeiculosModalContainer" style="max-height: 140px; overflow-y: auto; font-size: 13px;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="App.toggleModal('modalVeiculo', false)">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Veículo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: REGISTRO / EDIÇÃO DE MANUTENÇÃO -->
+    <div id="modalManutencao" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalManutencaoTitle">Registrar Nova Manutenção</h3>
+                <button class="modal-close-btn" onclick="App.toggleModal('modalManutencao', false)">&times;</button>
+            </div>
+            <form id="formManutencao">
+                <div class="modal-body">
+                    <input type="hidden" id="manutencaoId">
+
+                    <div class="form-group">
+                        <label for="manutencaoVeiculoId">Veículo Vinculado *</label>
+                        <select id="manutencaoVeiculoId" class="form-control" required>
+                            <!-- Preenchido dinamicamente via JS -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manutencaoTipo">Tipo de Serviço / Descrição *</label>
+                        <input type="text" id="manutencaoTipo" class="form-control" placeholder="Ex: Troca de Óleo do Motor e Filtro" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manutencaoCategoria">Classificação *</label>
+                            <select id="manutencaoCategoria" class="form-control" required>
+                                <option value="Preventiva">🛡️ Preventiva (Revisões Periódicas)</option>
+                                <option value="Preditiva">🔍 Preditiva (Acompanhamento / Desgaste)</option>
+                                <option value="Corretiva">⚠️ Corretiva (Reparo de Quebra / Falha)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="manutencaoData">Data do Serviço *</label>
+                            <input type="date" id="manutencaoData" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manutencaoKm">KM na Manutenção *</label>
+                            <input type="number" id="manutencaoKm" class="form-control" placeholder="Ex: 50000" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="manutencaoValor">Valor Total (R$) *</label>
+                            <input type="number" id="manutencaoValor" class="form-control" placeholder="Ex: 450.00" min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manutencaoIntervaloKm">Intervalo para Próxima Revisão Preventiva (KM)</label>
+                        <input type="number" id="manutencaoIntervaloKm" class="form-control" value="10000" min="500" step="500" placeholder="Padrão: 10.000 KM">
+                        <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display: block;">Usado para calcular automaticamente o alerta visual de próxima troca/revisão.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manutencaoObs">Observações Adicionais</label>
+                        <textarea id="manutencaoObs" class="form-control" rows="2" placeholder="Marca das peças, oficina, garantia, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="App.toggleModal('modalManutencao', false)">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Manutenção</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts do Sistema -->
+    <script src="js/storage.js"></script>
+    <script src="js/calculos.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
